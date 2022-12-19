@@ -1,35 +1,35 @@
-import { Grid, Row, Col } from '@freecodecamp/react-bootstrap';
-import { WindowLocation } from '@reach/router';
-import { graphql } from 'gatsby';
-import { uniq } from 'lodash-es';
-import React, { Fragment, useEffect, memo } from 'react';
+import {Grid, Row, Col} from '@freecodecamp/react-bootstrap';
+import {WindowLocation} from '@reach/router';
+import {graphql} from 'gatsby';
+import {uniq} from 'lodash-es';
+import React, {Fragment, useEffect, memo} from 'react';
 import Helmet from 'react-helmet';
-import { TFunction, withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import { configureAnchors } from 'react-scrollable-anchor';
-import { bindActionCreators, Dispatch } from 'redux';
-import { createSelector } from 'reselect';
+import {TFunction, withTranslation} from 'react-i18next';
+import {connect} from 'react-redux';
+import {configureAnchors} from 'react-scrollable-anchor';
+import {bindActionCreators, Dispatch} from 'redux';
+import {createSelector} from 'reselect';
 
-import { SuperBlocks } from '../../../../config/certification-settings';
-import { getSuperBlockTitleForMap } from '../../utils/superblock-map-titles';
+import {SuperBlocks} from '../../../../config/certification-settings';
+import {getSuperBlockTitleForMap} from '../../utils/superblock-map-titles';
 import DonateModal from '../../components/Donation/donation-modal';
 import Login from '../../components/Header/components/Login';
 import Map from '../../components/Map';
-import { Spacer } from '../../components/helpers';
-import { tryToShowDonationModal } from '../../redux/actions';
+import {Spacer} from '../../components/helpers';
+import {tryToShowDonationModal} from '../../redux/actions';
 import {
   isSignedInSelector,
   userSelector,
   currentChallengeIdSelector,
   userFetchStateSelector,
-  signInLoadingSelector
+  signInLoadingSelector,
 } from '../../redux/selectors';
-import { MarkdownRemark, AllChallengeNode, User } from '../../redux/prop-types';
+import {MarkdownRemark, AllChallengeNode, User} from '../../redux/prop-types';
 import Block from './components/block';
 import CertChallenge from './components/cert-challenge';
 import LegacyLinks from './components/legacy-links';
 import SuperBlockIntro from './components/super-block-intro';
-import { resetExpansion, toggleBlock } from './redux';
+import {resetExpansion, toggleBlock} from './redux';
 
 import './intro.css';
 
@@ -51,7 +51,7 @@ type SuperBlockProp = {
   fetchState: FetchState;
   isSignedIn: boolean;
   signInLoading: boolean;
-  location: WindowLocation<{ breadcrumbBlockClick: string }>;
+  location: WindowLocation<{breadcrumbBlockClick: string}>;
   resetExpansion: () => void;
   t: TFunction;
   toggleBlock: (arg0: string) => void;
@@ -59,7 +59,7 @@ type SuperBlockProp = {
   user: User;
 };
 
-configureAnchors({ offset: -40, scrollDuration: 0 });
+configureAnchors({offset: -40, scrollDuration: 0});
 
 const mapStateToProps = (state: Record<string, unknown>) => {
   return createSelector(
@@ -73,14 +73,14 @@ const mapStateToProps = (state: Record<string, unknown>) => {
       isSignedIn,
       signInLoading: boolean,
       fetchState: FetchState,
-      user: User
+      user: User,
     ) => ({
       currentChallengeId,
       isSignedIn,
       signInLoading,
       fetchState,
-      user
-    })
+      user,
+    }),
   )(state);
 };
 
@@ -89,9 +89,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       tryToShowDonationModal,
       resetExpansion,
-      toggleBlock: b => toggleBlock(b)
+      toggleBlock: (b) => toggleBlock(b),
     },
-    dispatch
+    dispatch,
   );
 
 const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
@@ -100,11 +100,11 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
     props.tryToShowDonationModal();
 
     setTimeout(() => {
-      configureAnchors({ offset: -40, scrollDuration: 400 });
+      configureAnchors({offset: -40, scrollDuration: 400});
     }, 0);
 
     return () => {
-      configureAnchors({ offset: -40, scrollDuration: 0 });
+      configureAnchors({offset: -40, scrollDuration: 0});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -112,11 +112,11 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
   const getChosenBlock = (): string => {
     const {
       data: {
-        allChallengeNode: { edges }
+        allChallengeNode: {edges},
       },
       isSignedIn,
       currentChallengeId,
-      location
+      location,
     }: SuperBlockProp = props;
 
     // if coming from breadcrumb click
@@ -125,7 +125,7 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
       typeof location.state === 'object' &&
       Object.prototype.hasOwnProperty.call(
         location.state,
-        'breadcrumbBlockClick'
+        'breadcrumbBlockClick',
       )
     ) {
       return location.state.breadcrumbBlockClick;
@@ -142,7 +142,7 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
     if (isSignedIn) {
       // see if currentChallenge is in this superBlock
       const currentChallengeEdge = edges.find(
-        edge => edge.node.challenge.id === currentChallengeId
+        (edge) => edge.node.challenge.id === currentChallengeId,
       );
 
       return currentChallengeEdge
@@ -154,7 +154,7 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
   };
 
   const initializeExpandedState = () => {
-    const { resetExpansion, toggleBlock } = props;
+    const {resetExpansion, toggleBlock} = props;
 
     resetExpansion();
     return toggleBlock(getChosenBlock());
@@ -163,23 +163,24 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
   const {
     data: {
       markdownRemark: {
-        frontmatter: { superBlock, title, certification }
+        frontmatter: {superBlock, title, certification},
       },
-      allChallengeNode: { edges }
+      allChallengeNode: {edges},
     },
     isSignedIn,
     signInLoading,
     t,
-    user
+    user,
   } = props;
 
-  const nodesForSuperBlock = edges.map(({ node }) => node);
+  const nodesForSuperBlock = edges.map(({node}) => node);
   const blockDashedNames = uniq(
-    nodesForSuperBlock.map(({ challenge: { block } }) => block)
+    nodesForSuperBlock.map(({challenge: {block}}) => block),
   );
 
   const i18nTitle = getSuperBlockTitleForMap(superBlock);
   const defaultCurriculumNames = blockDashedNames;
+  console.log({nodesForSuperBlock, defaultCurriculumNames, edges, props});
 
   return (
     <>
@@ -188,23 +189,24 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
       </Helmet>
       <Grid>
         <main>
-          <Row className='super-block-intro-page'>
+          <Row className="super-block-intro-page">
             <Col md={8} mdOffset={2} sm={10} smOffset={1} xs={12}>
               <Spacer size={2} />
               <LegacyLinks superBlock={superBlock} />
               <SuperBlockIntro superBlock={superBlock} />
               <Spacer size={2} />
-              <h2 className='text-center big-subheading'>
+              <h2 className="text-center big-subheading">
                 {t(`intro:misc-text.courses`)}
               </h2>
               <Spacer />
-              <div className='block-ui'>
-                {defaultCurriculumNames.map(blockDashedName => (
+              <div className="block-ui">
+                {defaultCurriculumNames.map((blockDashedName) => (
                   <Fragment key={blockDashedName}>
                     <Block
                       blockDashedName={blockDashedName}
+                      // isn't this really slow?
                       challenges={nodesForSuperBlock.filter(
-                        node => node.challenge.block === blockDashedName
+                        (node) => node.challenge.block === blockDashedName,
                       )}
                       superBlock={superBlock}
                     />
@@ -229,8 +231,8 @@ const SuperBlockIntroductionPage = (props: SuperBlockProp) => {
               )}
               <Spacer size={2} />
               <h3
-                className='text-center big-block-title'
-                style={{ whiteSpace: 'pre-line' }}
+                className="text-center big-block-title"
+                style={{whiteSpace: 'pre-line'}}
               >
                 {t(`intro:misc-text.browse-other`)}
               </h3>
@@ -250,12 +252,12 @@ SuperBlockIntroductionPage.displayName = 'SuperBlockIntroductionPage';
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(withTranslation()(memo(SuperBlockIntroductionPage)));
 
 export const query = graphql`
   query SuperBlockIntroPageBySlug($slug: String!, $superBlock: String!) {
-    markdownRemark(fields: { slug: { eq: $slug } }) {
+    markdownRemark(fields: {slug: {eq: $slug}}) {
       frontmatter {
         certification
         superBlock
@@ -270,7 +272,7 @@ export const query = graphql`
           challenge___challengeOrder
         ]
       }
-      filter: { challenge: { superBlock: { eq: $superBlock } } }
+      filter: {challenge: {superBlock: {eq: $superBlock}}}
     ) {
       edges {
         node {

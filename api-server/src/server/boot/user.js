@@ -245,6 +245,14 @@ function getUnlinkSocial(req, res, next) {
   });
 }
 
+// req needs the passed in superblock id
+function postResetSuperblock(req, res, next) {}
+
+function getAllChallengesInBlock(req, res, next) {}
+
+// req needs the passed in block id
+function postResetBlock(req, res, next) {}
+
 function postResetProgress(req, res, next) {
   const { user } = req;
   return user.updateAttributes(

@@ -40,6 +40,7 @@ const LowerJaw = ({
 }: LowerJawProps): JSX.Element => {
   const hintRef = React.useRef('');
   const [runningTests, setRunningTests] = useState(false);
+  const [definition, setDefinition] = useState('');
   const [testFeedbackHeight, setTestFeedbackHeight] = useState(0);
   const [currentAttempts, setCurrentAttempts] = useState(attempts);
   const [isFeedbackHidden, setIsFeedbackHidden] = useState(false);
@@ -187,6 +188,15 @@ const LowerJaw = ({
     return (
       <div>
         <hr />
+        <b>Concepts</b> (Click on a term to see the definition) <br />
+        {['Search Engine Optimization', 'Accessibility', "<main> tag"].map(el => (
+          <><a href="#" onClick={() => setDefinition(el)}>{el}{el !== 'heading' ? ',' : ''}</a>&nbsp;</>
+        ))}
+        <br /><br />
+        {definition && <><b>{definition}</b><br /></>}
+        {definition === 'Search Engine Optimization' ? 'SEO stands for “search engine optimization.” In simple terms, it means the process of improving your site to increase its visibility when people search for products or services related to your business in Google, Bing, and other search engines' : definition === 'Accessibility' ? 'Accessibility is the practice of making your websites usable by as many people as possible. We traditionally think of this as being about people with disabilities, but the practice of making sites accessible also benefits other groups such as those using mobile devices, or those with slow network connections.' : ''}
+        <hr />
+
         <div className='lower-jaw-icon-bar'>
           <button
             className='btn fade-in'

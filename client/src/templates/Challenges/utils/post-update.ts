@@ -1,6 +1,6 @@
-import { from, Observable } from 'rxjs';
-import { post } from '../../../utils/ajax';
-import type { ResponseWithData } from '../../../utils/ajax';
+import {from, Observable} from 'rxjs';
+import {post} from '../../../utils/ajax';
+import type {ResponseWithData} from '../../../utils/ajax';
 
 interface PostData {
   endpoint: string;
@@ -9,7 +9,8 @@ interface PostData {
 
 export default function postUpdate$({
   endpoint,
-  payload
+  payload,
 }: PostData): Observable<ResponseWithData<void>> {
+  console.log('postupdate', endpoint, payload);
   return from(post(endpoint, payload));
 }

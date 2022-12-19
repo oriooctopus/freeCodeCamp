@@ -7,15 +7,15 @@ import type {
   CompletedChallenge,
   SavedChallenge,
   SavedChallengeFile,
-  User
+  User,
 } from '../redux/prop-types';
 
-const { apiLocation } = envData;
+const {apiLocation} = envData;
 
 const base = apiLocation;
 
 const defaultOptions: RequestInit = {
-  credentials: 'include'
+  credentials: 'include',
 };
 
 // csrf_token is passed to the client as a cookie. The client must send
@@ -36,31 +36,33 @@ export interface ResponseWithData<T> {
 async function get<T>(path: string): Promise<ResponseWithData<T>> {
   const response = await fetch(`${base}${path}`, defaultOptions);
 
+  console.log('get!!', path, base);
   return combineDataWithResponse(response);
 }
 
 async function combineDataWithResponse<T>(response: Response) {
   const data = (await response.json()) as T;
-  return { response, data };
+  return {response, data};
 }
 
 export function post<T = void>(
   path: string,
-  body: unknown
+  body: unknown,
 ): Promise<ResponseWithData<T>> {
+  console.log('post!!', path, body);
   return request('POST', path, body);
 }
 
 function put<T = void>(
   path: string,
-  body: unknown
+  body: unknown,
 ): Promise<ResponseWithData<T>> {
   return request('PUT', path, body);
 }
 
 function deleteRequest<T = void>(
   path: string,
-  body: unknown
+  body: unknown,
 ): Promise<ResponseWithData<T>> {
   return request('DELETE', path, body);
 }
@@ -68,16 +70,16 @@ function deleteRequest<T = void>(
 async function request<T>(
   method: 'POST' | 'PUT' | 'DELETE',
   path: string,
-  body: unknown
+  body: unknown,
 ): Promise<ResponseWithData<T>> {
   const options: RequestInit = {
     ...defaultOptions,
     method,
     headers: {
       'CSRF-Token': getCSRFToken(),
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   };
 
   const response = await fetch(`${base}${path}`, options);
@@ -87,16 +89,16 @@ async function request<T>(
 /** GET **/
 
 interface SessionUser {
-  user?: { [username: string]: User };
-  sessionMeta: { activeDonations: number };
+  user?: {[username: string]: User};
+  sessionMeta: {activeDonations: number};
 }
 
 type CompleteChallengeFromApi = {
-  files: Array<Omit<ChallengeFile, 'fileKey'> & { key: string }>;
+  files: Array<Omit<ChallengeFile, 'fileKey'> & {key: string}>;
 } & Omit<CompletedChallenge, 'challengeFiles'>;
 
 type SavedChallengeFromApi = {
-  files: Array<Omit<SavedChallengeFile, 'fileKey'> & { key: string }>;
+  files: Array<Omit<SavedChallengeFile, 'fileKey'> & {key: string}>;
 } & Omit<SavedChallenge, 'challengeFiles'>;
 
 type ApiSessionResponse = Omit<SessionUser, 'user'>;
@@ -114,7 +116,7 @@ type ApiUser = {
 };
 
 type UserResponse = {
-  user: { [username: string]: User } | Record<string, never>;
+  user: {[username: string]: User} | Record<string, never>;
   result: string | undefined;
 };
 
@@ -124,31 +126,31 @@ function parseApiResponseToClientUser(data: ApiUser): UserResponse {
   let savedChallenges: SavedChallenge[] = [];
   if (userData) {
     completedChallenges = mapFilesToChallengeFiles(
-      userData.completedChallenges
+      userData.completedChallenges,
     );
     savedChallenges = mapFilesToChallengeFiles(userData.savedChallenges);
   }
   return {
     user: {
-      [data.result ?? '']: { ...userData, completedChallenges, savedChallenges }
+      [data.result ?? '']: {...userData, completedChallenges, savedChallenges},
     },
-    result: data.result
+    result: data.result,
   };
 }
 
 export function mapFilesToChallengeFiles<File, Rest>(
-  fileContainer: ({ files: (File & { key: string })[] } & Rest)[] = []
+  fileContainer: ({files: (File & {key: string})[]} & Rest)[] = [],
 ) {
-  return fileContainer.map(({ files, ...rest }) => ({
+  return fileContainer.map(({files, ...rest}) => ({
     ...rest,
-    challengeFiles: mapKeyToFileKey(files)
+    challengeFiles: mapKeyToFileKey(files),
   }));
 }
 
 function mapKeyToFileKey<K>(
-  files: (K & { key: string })[]
-): (Omit<K, 'key'> & { fileKey: string })[] {
-  return files.map(({ key, ...rest }) => ({ ...rest, fileKey: key }));
+  files: (K & {key: string})[],
+): (Omit<K, 'key'> & {fileKey: string})[] {
+  return files.map(({key, ...rest}) => ({...rest, fileKey: key}));
 }
 
 export function getSessionUser(): Promise<ResponseWithData<SessionUser>> {
@@ -156,15 +158,15 @@ export function getSessionUser(): Promise<ResponseWithData<SessionUser>> {
     ResponseWithData<ApiUser & ApiSessionResponse>
   > = get('/user/get-session-user');
   // TODO: Once DB is migrated, no longer need to parse `files` -> `challengeFiles` etc.
-  return responseWithData.then(({ response, data }) => {
-    const { result, user } = parseApiResponseToClientUser(data);
+  return responseWithData.then(({response, data}) => {
+    const {result, user} = parseApiResponseToClientUser(data);
     return {
       response,
       data: {
         sessionMeta: data.sessionMeta,
         result,
-        user
-      }
+        user,
+      },
     };
   });
 }
@@ -174,22 +176,22 @@ type UserProfileResponse = {
   result: string | undefined;
 };
 export function getUserProfile(
-  username: string
+  username: string,
 ): Promise<ResponseWithData<UserProfileResponse>> {
-  const responseWithData = get<{ entities?: ApiUser; result?: string }>(
-    `/api/users/get-public-profile?username=${username}`
+  const responseWithData = get<{entities?: ApiUser; result?: string}>(
+    `/api/users/get-public-profile?username=${username}`,
   );
-  return responseWithData.then(({ response, data }) => {
-    const { result, user } = parseApiResponseToClientUser({
+  return responseWithData.then(({response, data}) => {
+    const {result, user} = parseApiResponseToClientUser({
       user: data.entities?.user ?? {},
-      result: data.result
+      result: data.result,
     });
     return {
       response,
       data: {
-        entities: { user },
-        result
-      }
+        entities: {user},
+        result,
+      },
     };
   });
 }
@@ -202,13 +204,13 @@ interface Cert {
 }
 export function getShowCert(
   username: string,
-  certSlug: string
+  certSlug: string,
 ): Promise<ResponseWithData<Cert>> {
   return get(`/certificate/showCert/${username}/${certSlug}`);
 }
 
 export function getUsernameExists(
-  username: string
+  username: string,
 ): Promise<ResponseWithData<boolean>> {
   return get(`/api/users/exists?username=${username}`);
 }
@@ -231,13 +233,13 @@ export function addDonation(body: Donation): Promise<ResponseWithData<void>> {
 }
 
 export function postChargeStripe(
-  body: Donation
+  body: Donation,
 ): Promise<ResponseWithData<void>> {
   return post('/donate/charge-stripe', body);
 }
 
 export function postChargeStripeCard(
-  body: Donation
+  body: Donation,
 ): Promise<ResponseWithData<void>> {
   return post('/donate/charge-stripe-card', body);
 }
@@ -280,81 +282,81 @@ interface MyAbout {
   picture: string;
 }
 export function putUpdateMyAbout(
-  values: MyAbout
+  values: MyAbout,
 ): Promise<ResponseWithData<void>> {
-  return put('/update-my-about', { ...values });
+  return put('/update-my-about', {...values});
 }
 
 export function putUpdateMyUsername(
-  username: string
+  username: string,
 ): Promise<ResponseWithData<void>> {
-  return put('/update-my-username', { username });
+  return put('/update-my-username', {username});
 }
 
 export function putUpdateMyProfileUI(
-  profileUI: User['profileUI']
+  profileUI: User['profileUI'],
 ): Promise<ResponseWithData<void>> {
-  return put('/update-my-profileui', { profileUI });
+  return put('/update-my-profileui', {profileUI});
 }
 
 export function putUpdateMySocials(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-socials', update);
 }
 
 export function putUpdateMySound(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-sound', update);
 }
 
 export function putUpdateMyTheme(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-theme', update);
 }
 
 export function putUpdateMyKeyboardShortcuts(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-keyboard-shortcuts', update);
 }
 
 export function putUpdateMyHonesty(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-honesty', update);
 }
 
 export function putUpdateMyQuincyEmail(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-quincy-email', update);
 }
 
 export function putUpdateMyPortfolio(
-  update: Record<string, string>
+  update: Record<string, string>,
 ): Promise<ResponseWithData<void>> {
   return put('/update-my-portfolio', update);
 }
 
 export function putUserAcceptsTerms(
-  quincyEmails: boolean
+  quincyEmails: boolean,
 ): Promise<ResponseWithData<void>> {
-  return put('/update-privacy-terms', { quincyEmails });
+  return put('/update-privacy-terms', {quincyEmails});
 }
 
 export function putUserUpdateEmail(
-  email: string
+  email: string,
 ): Promise<ResponseWithData<void>> {
-  return put('/update-my-email', { email });
+  return put('/update-my-email', {email});
 }
 
 export function putVerifyCert(
-  certSlug: string
+  certSlug: string,
 ): Promise<ResponseWithData<void>> {
-  return put('/certificate/verify', { certSlug });
+  return put('/certificate/verify', {certSlug});
 }
 
 /** DELETE **/
