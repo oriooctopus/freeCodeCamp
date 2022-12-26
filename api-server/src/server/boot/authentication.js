@@ -1,22 +1,22 @@
 import dedent from 'dedent';
-import { check } from 'express-validator';
+import {check} from 'express-validator';
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
-import { isEmail } from 'validator';
+import {isEmail} from 'validator';
 
-import { jwtSecret } from '../../../../config/secrets';
+import {jwtSecret} from '../../../../config/secrets';
 
-import { decodeEmail } from '../../common/utils';
+import {decodeEmail} from '../../common/utils';
 import {
   createPassportCallbackAuthenticator,
   devSaveResponseAuthCookies,
-  devLoginRedirect
+  devLoginRedirect,
 } from '../component-passport';
-import { wrapHandledError } from '../utils/create-handled-error.js';
-import { removeCookies } from '../utils/getSetAccessToken';
-import { ifUserRedirectTo, ifNoUserRedirectHome } from '../utils/middleware';
-import { getRedirectParams } from '../utils/redirection';
-import { createDeleteUserToken } from '../middlewares/user-token';
+import {wrapHandledError} from '../utils/create-handled-error.js';
+import {removeCookies} from '../utils/getSetAccessToken';
+import {ifUserRedirectTo, ifNoUserRedirectHome} from '../utils/middleware';
+import {getRedirectParams} from '../utils/redirection';
+import {createDeleteUserToken} from '../middlewares/user-token';
 
 const passwordlessGetValidators = [
   check('email')
@@ -26,8 +26,8 @@ const passwordlessGetValidators = [
     .exists()
     .withMessage('Token should exist.')
     // based on strongloop/loopback/common/models/access-token.js#L15
-    .isLength({ min: 64, max: 64 })
-    .withMessage('Token is not the right length.')
+    .isLength({min: 64, max: 64})
+    .withMessage('Token is not the right length.'),
 ];
 
 module.exports = function enableAuthentication(app) {
@@ -49,30 +49,30 @@ module.exports = function enableAuthentication(app) {
       '/signin',
       passport.authenticate('devlogin'),
       devSaveAuthCookies,
-      devLoginSuccessRedirect
+      devLoginSuccessRedirect,
     );
   } else {
     api.get('/signin', ifUserRedirect, (req, res, next) => {
-      const { returnTo, origin, pathPrefix } = getRedirectParams(req);
-      const state = jwt.sign({ returnTo, origin, pathPrefix }, jwtSecret);
-      return passport.authenticate('auth0-login', { state })(req, res, next);
+      const {returnTo, origin, pathPrefix} = getRedirectParams(req);
+      const state = jwt.sign({returnTo, origin, pathPrefix}, jwtSecret);
+      return passport.authenticate('auth0-login', {state})(req, res, next);
     });
 
     api.get(
       '/auth/auth0/callback',
-      createPassportCallbackAuthenticator('auth0-login', { provider: 'auth0' })
+      createPassportCallbackAuthenticator('auth0-login', {provider: 'auth0'}),
     );
   }
 
   api.get('/signout', deleteUserToken, (req, res) => {
-    const { origin, returnTo } = getRedirectParams(req);
+    const {origin, returnTo} = getRedirectParams(req);
     req.logout();
-    req.session.destroy(err => {
+    req.session.destroy((err) => {
       if (err) {
         throw wrapHandledError(new Error('could not destroy session'), {
           type: 'info',
           message: 'We could not log you out, please try again in a moment.',
-          redirectTo: origin
+          redirectTo: origin,
         });
       }
       removeCookies(req, res);
@@ -84,7 +84,7 @@ module.exports = function enableAuthentication(app) {
     '/confirm-email',
     ifNoUserRedirect,
     passwordlessGetValidators,
-    createGetPasswordlessAuth(app)
+    createGetPasswordlessAuth(app),
   );
 
   app.use(api);
@@ -97,49 +97,48 @@ const defaultErrorMsg = dedent`
 
 function createGetPasswordlessAuth(app) {
   const {
-    models: { AuthToken, User }
+    models: {AuthToken, User},
   } = app;
   return function getPasswordlessAuth(req, res, next) {
-    const {
-      query: { email: encodedEmail, token: authTokenId, emailChange } = {}
-    } = req;
-    const { origin } = getRedirectParams(req);
+    const {query: {email: encodedEmail, token: authTokenId, emailChange} = {}} =
+      req; // example of arguments
+    const {origin} = getRedirectParams(req);
     const email = decodeEmail(encodedEmail);
     if (!isEmail(email)) {
       return next(
         wrapHandledError(new TypeError('decoded email is invalid'), {
           type: 'info',
           message: 'The email encoded in the link is incorrectly formatted',
-          redirectTo: `${origin}/signin`
-        })
+          redirectTo: `${origin}/signin`,
+        }),
       );
     }
     // first find
     return (
-      AuthToken.findOne$({ where: { id: authTokenId } })
-        .flatMap(authToken => {
+      AuthToken.findOne$({where: {id: authTokenId}})
+        .flatMap((authToken) => {
           if (!authToken) {
             throw wrapHandledError(
               new Error(`no token found for id: ${authTokenId}`),
               {
                 type: 'info',
                 message: defaultErrorMsg,
-                redirectTo: `${origin}/signin`
-              }
+                redirectTo: `${origin}/signin`,
+              },
             );
           }
           // find user then validate and destroy email validation token
           // finally retun user instance
-          return User.findOne$({ where: { id: authToken.userId } }).flatMap(
-            user => {
+          return User.findOne$({where: {id: authToken.userId}}).flatMap(
+            (user) => {
               if (!user) {
                 throw wrapHandledError(
                   new Error(`no user found for token: ${authTokenId}`),
                   {
                     type: 'info',
                     message: defaultErrorMsg,
-                    redirectTo: `${origin}/signin`
-                  }
+                    redirectTo: `${origin}/signin`,
+                  },
                 );
               }
               if (user.email !== email) {
@@ -149,14 +148,14 @@ function createGetPasswordlessAuth(app) {
                     {
                       type: 'info',
                       message: defaultErrorMsg,
-                      redirectTo: `${origin}/signin`
-                    }
+                      redirectTo: `${origin}/signin`,
+                    },
                   );
                 }
               }
               return authToken
                 .validate$()
-                .map(isValid => {
+                .map((isValid) => {
                   if (!isValid) {
                     throw wrapHandledError(new Error('token is invalid'), {
                       type: 'info',
@@ -164,18 +163,18 @@ function createGetPasswordlessAuth(app) {
                         Looks like the link you clicked has expired,
                         please request a fresh link, to sign in.
                       `,
-                      redirectTo: `${origin}/signin`
+                      redirectTo: `${origin}/signin`,
                     });
                   }
                   return authToken.destroy$();
                 })
                 .map(() => user);
-            }
+            },
           );
         })
         // at this point token has been validated and destroyed
         // update user and log them in
-        .map(user => user.loginByRequest(req, res))
+        .map((user) => user.loginByRequest(req, res))
         .do(() => {
           if (emailChange) {
             req.flash('success', 'flash.email-valid');

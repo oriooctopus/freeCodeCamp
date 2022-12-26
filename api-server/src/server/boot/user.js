@@ -1,27 +1,28 @@
 import debugFactory from 'debug';
 import dedent from 'dedent';
-import { body } from 'express-validator';
-import { pick } from 'lodash';
-import { Observable } from 'rx';
+import {body} from 'express-validator';
+import {pick} from 'lodash';
+import {Observable} from 'rx';
 
 import {
   fixCompletedChallengeItem,
   fixPartiallyCompletedChallengeItem,
-  fixSavedChallengeItem
+  fixSavedChallengeItem,
 } from '../../common/utils';
-import { removeCookies } from '../utils/getSetAccessToken';
-import { ifNoUser401, ifNoUserRedirectHome } from '../utils/middleware';
+import {removeCookies} from '../utils/getSetAccessToken';
+import {ifNoUser401, ifNoUserRedirectHome} from '../utils/middleware';
 import {
   getProgress,
   normaliseUserFields,
-  userPropsForSession
+  userPropsForSession,
 } from '../utils/publicUserProps';
-import { getRedirectParams } from '../utils/redirection';
-import { trimTags } from '../utils/validators';
+import {getRedirectParams} from '../utils/redirection';
+import {trimTags} from '../utils/validators';
 import {
   createDeleteUserToken,
-  encodeUserToken
+  encodeUserToken,
 } from '../middlewares/user-token';
+import {connectScrollTo} from 'react-instantsearch-core';
 
 const log = debugFactory('fcc:boot:user');
 const sendNonUserToHome = ifNoUserRedirectHome();
@@ -43,13 +44,13 @@ function bootUser(app) {
     '/account/reset-progress',
     ifNoUser401,
     deleteUserToken,
-    postResetProgress
+    postResetProgress,
   );
   api.post(
     '/user/report-user/',
     ifNoUser401,
     body('reportDescription').customSanitizer(trimTags),
-    postReportUserProfile
+    postReportUserProfile,
   );
 
   api.post('/user/user-token', ifNoUser401, postUserToken);
@@ -57,22 +58,22 @@ function bootUser(app) {
     '/user/user-token',
     ifNoUser401,
     deleteUserToken,
-    deleteUserTokenResponse
+    deleteUserTokenResponse,
   );
 
   app.use(api);
 }
 
 function createPostUserToken(app) {
-  const { UserToken } = app.models;
+  const {UserToken} = app.models;
 
   return async function postUserToken(req, res) {
     const ttl = 900 * 24 * 60 * 60 * 1000;
     let encodedUserToken;
 
     try {
-      await UserToken.destroyAll({ userId: req.user.id });
-      const newUserToken = await UserToken.create({ ttl, userId: req.user.id });
+      await UserToken.destroyAll({userId: req.user.id});
+      const newUserToken = await UserToken.create({ttl, userId: req.user.id});
 
       if (!newUserToken?.id) throw new Error();
       encodedUserToken = encodeUserToken(newUserToken.id);
@@ -80,7 +81,7 @@ function createPostUserToken(app) {
       return res.status(500).send('Error starting project');
     }
 
-    return res.json({ userToken: encodedUserToken });
+    return res.json({userToken: encodedUserToken});
   };
 }
 
@@ -89,17 +90,17 @@ function deleteUserTokenResponse(req, res) {
     return res.status(500).send('Error deleting user token');
   }
 
-  return res.send({ userToken: null });
+  return res.send({userToken: null});
 }
 
 function createReadSessionUser(app) {
-  const { Donation } = app.models;
+  const {Donation} = app.models;
 
   return async function getSessionUser(req, res, next) {
     const queryUser = req.user;
 
     const userTokenArr = await queryUser.userTokens({
-      userId: queryUser.id
+      userId: queryUser.id,
     });
 
     const userToken = userTokenArr[0]?.id;
@@ -123,18 +124,18 @@ function createReadSessionUser(app) {
           partiallyCompletedChallenges,
           savedChallenges,
           progressTimestamps,
-          activeDonations
+          activeDonations,
         ) => ({
           activeDonations,
           completedChallenges,
           partiallyCompletedChallenges,
           progress: getProgress(progressTimestamps, queryUser.timezone),
-          savedChallenges
-        })
+          savedChallenges,
+        }),
       );
     Observable.if(
       () => !queryUser,
-      Observable.of({ user: {}, result: '' }),
+      Observable.of({user: {}, result: ''}),
       Observable.defer(() => source)
         .map(
           ({
@@ -142,23 +143,23 @@ function createReadSessionUser(app) {
             completedChallenges,
             partiallyCompletedChallenges,
             progress,
-            savedChallenges
+            savedChallenges,
           }) => ({
             user: {
               ...queryUser.toJSON(),
               ...progress,
               completedChallenges: completedChallenges.map(
-                fixCompletedChallengeItem
+                fixCompletedChallengeItem,
               ),
               partiallyCompletedChallenges: partiallyCompletedChallenges.map(
-                fixPartiallyCompletedChallengeItem
+                fixPartiallyCompletedChallengeItem,
               ),
-              savedChallenges: savedChallenges.map(fixSavedChallengeItem)
+              savedChallenges: savedChallenges.map(fixSavedChallengeItem),
             },
-            sessionMeta: { activeDonations }
-          })
+            sessionMeta: {activeDonations},
+          }),
         )
-        .map(({ user, sessionMeta }) => ({
+        .map(({user, sessionMeta}) => ({
           user: {
             [user.username]: {
               ...pick(user, userPropsForSession),
@@ -170,25 +171,25 @@ function createReadSessionUser(app) {
               isWebsite: !!user.website,
               ...normaliseUserFields(user),
               joinDate: user.id.getTimestamp(),
-              userToken: encodedUserToken
-            }
+              userToken: encodedUserToken,
+            },
           },
           sessionMeta,
-          result: user.username
-        }))
-    ).subscribe(user => res.json(user), next);
+          result: user.username,
+        })),
+    ).subscribe((user) => res.json(user), next);
   };
 }
 
 function getAccount(req, res) {
-  const { username } = req.user;
+  const {username} = req.user;
   return res.redirect('/' + username);
 }
 
 function getUnlinkSocial(req, res, next) {
-  const { user } = req;
-  const { username } = user;
-  const { origin } = getRedirectParams(req);
+  const {user} = req;
+  const {username} = user;
+  const {origin} = getRedirectParams(req);
   let social = req.params.social;
   if (!social) {
     req.flash('danger', 'No social account found');
@@ -209,8 +210,8 @@ function getUnlinkSocial(req, res, next) {
 
   const query = {
     where: {
-      provider: social
-    }
+      provider: social,
+    },
   };
 
   return user.identities(query, function (err, identities) {
@@ -230,9 +231,9 @@ function getUnlinkSocial(req, res, next) {
         return next(err);
       }
 
-      const updateData = { [social]: null };
+      const updateData = {[social]: null};
 
-      return user.updateAttributes(updateData, err => {
+      return user.updateAttributes(updateData, (err) => {
         if (err) {
           return next(err);
         }
@@ -254,7 +255,9 @@ function getAllChallengesInBlock(req, res, next) {}
 function postResetBlock(req, res, next) {}
 
 function postResetProgress(req, res, next) {
-  const { user } = req;
+  const {user} = req;
+  console.log('user', user);
+  throw new Error('STOP');
   return user.updateAttributes(
     {
       progressTimestamps: [Date.now()],
@@ -279,19 +282,19 @@ function postResetProgress(req, res, next) {
       completedChallenges: [],
       savedChallenges: [],
       partiallyCompletedChallenges: [],
-      needsModeration: false
+      needsModeration: false,
     },
     function (err) {
       if (err) {
         return next(err);
       }
       return res.status(200).json({});
-    }
+    },
   );
 }
 
 function createPostDeleteAccount(app) {
-  const { User } = app.models;
+  const {User} = app.models;
   return async function postDeleteAccount(req, res, next) {
     return User.destroyById(req.user.id, function (err) {
       if (err) {
@@ -305,18 +308,18 @@ function createPostDeleteAccount(app) {
 }
 
 function createPostReportUserProfile(app) {
-  const { Email } = app.models;
+  const {Email} = app.models;
   return function postReportUserProfile(req, res, next) {
-    const { user } = req;
-    const { username, reportDescription: report } = req.body;
-    const { origin } = getRedirectParams(req);
+    const {user} = req;
+    const {username, reportDescription: report} = req.body;
+    const {origin} = getRedirectParams(req);
     log(username);
     log(report);
 
     if (!username || !report || report === '') {
       return res.json({
         type: 'danger',
-        message: 'flash.provide-username'
+        message: 'flash.provide-username',
       });
     }
     return Email.send$(
@@ -337,9 +340,9 @@ function createPostReportUserProfile(app) {
         Email: ${user.email}\n
         Thanks and regards,
         ${user.name}
-      `)
+      `),
       },
-      err => {
+      (err) => {
         if (err) {
           err.redirectTo = `${origin}/${username}`;
           return next(err);
@@ -348,9 +351,9 @@ function createPostReportUserProfile(app) {
         return res.json({
           type: 'info',
           message: 'flash.report-sent',
-          variables: { email: user.email }
+          variables: {email: user.email},
         });
-      }
+      },
     );
   };
 }

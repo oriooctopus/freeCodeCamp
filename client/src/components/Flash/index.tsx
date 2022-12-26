@@ -1,9 +1,9 @@
-import { Alert } from '@freecodecamp/react-bootstrap';
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import { FlashState } from '../../redux/types';
-import { removeFlashMessage } from './redux';
+import {Alert} from '@freecodecamp/react-bootstrap';
+import React, {useState, useEffect} from 'react';
+import {useTranslation} from 'react-i18next';
+import {TransitionGroup, CSSTransition} from 'react-transition-group';
+import {FlashState} from '../../redux/types';
+import {removeFlashMessage} from './redux';
 
 import './flash.css';
 
@@ -12,9 +12,9 @@ type FlashProps = {
   removeFlashMessage: typeof removeFlashMessage;
 };
 
-function Flash({ flashMessage, removeFlashMessage }: FlashProps): JSX.Element {
-  const { type, message, id, variables } = flashMessage;
-  const { t } = useTranslation();
+function Flash({flashMessage, removeFlashMessage}: FlashProps): JSX.Element {
+  const {type, message, id, variables} = flashMessage;
+  const {t} = useTranslation();
   const [flashMessageHeight, setFlashMessageHeight] = useState(0);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ function Flash({ flashMessage, removeFlashMessage }: FlashProps): JSX.Element {
     setFlashMessageHeight(flashMessageElem?.offsetHeight || 0);
     document.documentElement.style.setProperty(
       '--flash-message-height',
-      `${flashMessageHeight}px`
+      `${flashMessageHeight}px`,
     );
   }, [flashMessageHeight]);
 
@@ -31,29 +31,22 @@ function Flash({ flashMessage, removeFlashMessage }: FlashProps): JSX.Element {
     document.documentElement.style.setProperty('--flash-message-height', '0px');
     removeFlashMessage();
   }
+  console.log('what is this?', t(message, variables));
 
   return (
-    <>
-      <TransitionGroup>
-        <CSSTransition classNames='flash-message' key={id} timeout={500}>
-          <Alert
-            bsStyle={type}
-            className='flash-message'
-            closeLabel={t('buttons.close')}
-            onDismiss={handleClose}
-          >
-            {t(message, variables)}
-          </Alert>
-        </CSSTransition>
-      </TransitionGroup>
-      {flashMessage && (
-        <div
-          style={{
-            height: `${flashMessageHeight}px`
-          }}
-        />
-      )}
-    </>
+    <TransitionGroup>
+      <CSSTransition classNames="flash-message" key={id} timeout={500}>
+        <Alert
+          bsStyle={type}
+          className="flash-message"
+          closeLabel={t('buttons.close')}
+          onDismiss={handleClose}
+          test={123}
+        >
+          {t(message, variables)}
+        </Alert>
+      </CSSTransition>
+    </TransitionGroup>
   );
 }
 
